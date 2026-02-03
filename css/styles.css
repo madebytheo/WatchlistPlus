@@ -1,0 +1,98 @@
+/*
+  Josh's Custom CSS Reset
+  https://www.joshwcomeau.com/css/custom-css-reset/
+*/
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+*:not(dialog) {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    interpolate-size: allow-keywords;
+  }
+}
+
+body {
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+}
+
+p {
+  text-wrap: pretty;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+}
+
+/*
+  Custom CSS
+*/
+
+:root {
+  --primary-100: #ff9900;
+  --primary-200: #dc7d00;
+  --primary-300: #8f3e00;
+  --accent-100: #00a8e8;
+  --accent-200: #004d85;
+  --text-100: #ffffff;
+  --text-200: #e0e0e0;
+  --bg-100: #1c1c1c;
+  --bg-200: #2b2b2b;
+  --bg-300: #434343;
+}
+
+html {
+  font-family: "Outfit", system-ui;
+}
+
+body {
+  background: var(--bg-100);
+  color: var(--text-200);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text-100);
+}
