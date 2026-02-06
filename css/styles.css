@@ -1,29 +1,22 @@
-/*
-  Josh's Custom CSS Reset
-  https://www.joshwcomeau.com/css/custom-css-reset/
-*/
+/* JCs RESET CUSTOMIZED */
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
-
 *:not(dialog) {
   margin: 0;
 }
-
 @media (prefers-reduced-motion: no-preference) {
   html {
     interpolate-size: allow-keywords;
   }
 }
-
 body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
-
 img,
 picture,
 video,
@@ -32,14 +25,12 @@ svg {
   display: block;
   max-width: 100%;
 }
-
 input,
 button,
 textarea,
 select {
   font: inherit;
 }
-
 p,
 h1,
 h2,
@@ -49,7 +40,6 @@ h5,
 h6 {
   overflow-wrap: break-word;
 }
-
 p {
   text-wrap: pretty;
 }
@@ -62,9 +52,7 @@ h6 {
   text-wrap: balance;
 }
 
-/*
-  Custom CSS
-*/
+/* DESIGN TOKENS */
 
 :root {
   --primary-100: #ff6666;
@@ -80,9 +68,9 @@ h6 {
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 1rem;
-  /* --space-4: 1.25rem;
+  --space-4: 1.25rem;
   --space-5: 1.5rem;
-  --space-6: 2rem; not useful yet */
+  --space-6: 2rem;
   --radius: 0.25rem;
   --radius-md: 0.5rem;
   --radius-pill: 9999px;
@@ -90,20 +78,22 @@ h6 {
   --box-shadow-sm: 0 0 6px;
 }
 
+/* CUSTOM CSS */
+
 html {
   font-family: "Outfit", system-ui;
 }
-
 body {
   background: var(--bg-100);
   color: var(--text-200);
+  max-width: 1024px;
+  margin: 0 auto;
 }
 body.states-empty {
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
 }
-
 h1,
 h2,
 h3,
@@ -113,7 +103,7 @@ h6 {
   color: var(--text-100);
 }
 
-/* LOGO COMPONENT */
+/* logo */
 .logo {
   background: var(--primary-100);
   display: inline-block;
@@ -125,12 +115,22 @@ h6 {
   color: var(--bg-100);
 }
 
-/* BUTTON COMPONENT */
+/* site header */
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* buttons */
 .btn {
   background: var(--bg-300);
   color: var(--text-100);
   border: none;
   box-shadow: var(--box-shadow) rgb(0 0 0 / 0.35);
+}
+.btn ion-icon {
+  pointer-events: none;
 }
 .btn--icon {
   display: flex;
@@ -141,11 +141,12 @@ h6 {
   min-height: 44px;
   border-radius: var(--radius-pill);
   transition: all 0.1s ease-in-out;
+  cursor: pointer;
 }
 .btn--primary {
   background: var(--accent-100);
   color: var(--bg-100);
-  box-shadow: var(--box-shadow) rgb(255 204 153 / 0.28);
+  box-shadow: var(--box-shadow) var(--accent-100);
 }
 .btn--primary:hover {
   cursor: pointer;
@@ -166,13 +167,33 @@ h6 {
 .btn--primary:disabled:focus-visible {
   outline: none;
 }
-#floating-button {
-  position: absolute;
+.btn--form {
+  align-self: flex-end;
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-4);
+}
+.btn--text {
+  background: transparent;
+  box-shadow: none;
+}
+.btn--text:hover,
+.btn--text:focus-visible {
+  background: var(--bg-300);
+  outline: none;
+}
+#fab-create {
+  position: fixed;
   bottom: var(--space-3);
   right: var(--space-3);
+  z-index: 10;
+}
+@media (min-width: 1024px) {
+  #fab-create {
+    right: calc(50% - 512px + var(--space-3));
+  }
 }
 
-/* EMPTY STATE RELATED */
+/* empty state */
 .empty-state {
   text-align: center;
   transform: translateY(-2rem);
@@ -183,18 +204,11 @@ h6 {
 .empty-state__text {
   font-size: 0.875rem;
 }
-section {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
-/* WATCHLIST CARD COMPONENT */
+/* watchlist card */
 .watchlist-card {
   background: rgba(41, 41, 41, 0.25);
   width: 100%;
-  max-width: 150px;
   border-radius: var(--radius-md);
   padding: var(--space-3);
   display: flex;
@@ -203,6 +217,8 @@ section {
   justify-content: space-between;
   gap: var(--space-2);
   border: 1px solid var(--bg-200);
+  break-inside: avoid;
+  margin-bottom: var(--space-3);
 }
 .watchlist-card__header {
   display: flex;
@@ -213,16 +229,93 @@ section {
 .watchlist-card__icon {
   filter: drop-shadow(var(--box-shadow-sm) var(--primary-200));
 }
+.watchlist-card__title {
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
 .watchlist-card__count {
   font-size: 0.875rem;
 }
 
-/*
-  Utility Classes
-*/
+/* dialog */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(75px);
+  z-index: 100;
+}
+.dialog {
+  background: var(--bg-200);
+  border: none;
+  width: 90%;
+  border-radius: var(--radius-md);
+  max-width: 450px;
+}
+.dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-5);
+  border-bottom: 1px solid var(--bg-300);
+  padding-bottom: var(--space-2);
+}
+.dialog__form {
+  display: flex;
+  flex-direction: column;
+}
+.form__label {
+  margin: 0 0 var(--space-2) var(--space-2);
+  color: var(--text-200);
+}
+.form__input {
+  padding: var(--space-2);
+  border-radius: var(--radius);
+  border: 1px solid var(--bg-300);
+  background: transparent;
+  color: var(--text-100);
+  transition: all 0.1s ease-in-out;
+  outline-color: var(--bg-300);
+}
+.form__input:last-of-type {
+  margin-bottom: var(--space-5);
+}
+.form__input:focus-visible {
+  outline: 1px solid var(--bg-300);
+  outline-offset: 3px;
+}
+
+/* masonry content grid */
+.content-grid {
+  column-count: 1;
+  column-gap: var(--space-3);
+}
+@media (min-width: 400px) {
+  .content-grid {
+    column-count: 2;
+  }
+}
+@media (min-width: 600px) {
+  .content-grid {
+    column-count: 3;
+  }
+}
+
+/* UTILITY CLASSES */
 
 .container {
   padding: var(--space-3);
+}
+.container--empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .display {
   display: block;
