@@ -22,6 +22,14 @@ const dialogOverlay = document.getElementById("dialog-overlay");
 const dialogCreate = document.getElementById("dialog-create");
 const formCreate = document.getElementById("form-create-watchlist");
 const inputTitle = document.getElementById("input-watchlist-title");
+const dialogDetailOverlay = document.getElementById("dialog-detail-overlay");
+const dialogDetail = document.getElementById("dialog-detail");
+const detailWatchlistTitle = document.getElementById("detail-watchlist-title");
+const btnAddMovie = document.getElementById("btn-add-movie");
+
+// STATE //
+
+let currentWatchlistId = null;
 
 // STATE HELPERS //
 
@@ -89,10 +97,26 @@ function closeDialog() {
   dialogCreate.removeAttribute("open");
   formCreate.reset();
 }
+function openDetailDialog(watchlistId) {
+  const watchlists = loadWatchlists();
+  const watchlist = watchlists.find((wl) => wl.id === watchlistId);
+  if (!watchlist) return;
+
+  currentWatchlistId = watchlistId;
+  detailWatchlistTitle.textContent = watchlist.title;
+  dialogDetailOverlay.classList.remove("hide");
+  dialogDetail.setAttribute("open", "");
+}
+function closeDetailDialog() {
+  dialogDetailOverlay.classList.add("hide");
+  dialogDetail.removeAttribute("open");
+  currentWatchlistId = null;
+}
 
 // EVENT LISTENERS //
 
 fab.addEventListener("click", openDialog);
+
 dialogOverlay.addEventListener("click", (e) => {
   if (
     e.target === dialogOverlay ||
@@ -100,6 +124,27 @@ dialogOverlay.addEventListener("click", (e) => {
   ) {
     closeDialog();
   }
+});
+
+dialogDetailOverlay.addEventListener("click", (e) => {
+  if (
+    e.target === dialogDetailOverlay ||
+    e.target.dataset.action === "close-dialog"
+  ) {
+    closeDetailDialog();
+  }
+});
+
+contentGrid.addEventListener("click", (e) => {
+  const card = e.target.closest(".watchlist-card");
+  if (card) {
+    const watchlistId = card.dataset.id;
+    openDetailDialog(watchlistId);
+  }
+});
+
+btnAddMovie.addEventListener("click", () => {
+  console.log("Add movie button clicked for watchlist:", currentWatchlistId);
 });
 formCreate.addEventListener("submit", (e) => {
   e.preventDefault();

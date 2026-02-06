@@ -78,6 +78,38 @@
       </dialog>
     </div>
 
+    <!-- detail watchlist dialog -->
+    <div
+      class="dialog-overlay hide"
+      id="dialog-detail-overlay"
+      role="presentation">
+      <dialog
+        class="dialog dialog--fullscreen"
+        id="dialog-detail"
+        aria-labelledby="detail-watchlist-title">
+        <header class="dialog__header">
+          <h2 id="detail-watchlist-title"></h2>
+          <button
+            class="btn btn--icon btn--text"
+            data-action="close-dialog"
+            aria-label="Close dialog">
+            <ion-icon name="close-outline"></ion-icon>
+          </button>
+        </header>
+        <div class="dialog__content" id="detail-content">
+          <!-- Future: items list will go here -->
+        </div>
+        <footer class="dialog__footer">
+          <button
+            type="button"
+            class="btn btn--primary btn--form"
+            id="btn-add-movie">
+            Add Movie
+          </button>
+        </footer>
+      </dialog>
+    </div>
+
     <script
       type="module"
       src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>

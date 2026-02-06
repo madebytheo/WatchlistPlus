@@ -257,6 +257,15 @@ h6 {
   border-radius: var(--radius-md);
   max-width: 450px;
 }
+.dialog--fullscreen {
+  width: 100%;
+  max-width: 100%;
+  height: 100dvh;
+  border-radius: 0;
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+}
 .dialog__header {
   display: flex;
   align-items: center;
@@ -265,9 +274,20 @@ h6 {
   border-bottom: 1px solid var(--bg-300);
   padding-bottom: var(--space-2);
 }
+.dialog__content {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: var(--space-3);
+}
 .dialog__form {
   display: flex;
   flex-direction: column;
+}
+.dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--bg-300);
 }
 .form__label {
   margin: 0 0 var(--space-2) var(--space-2);
