@@ -1,21 +1,30 @@
 /**
- * state is persisted in localStorage as an array of watchlist objects.
+ * ARCHITECTURE:
+ * - State is persisted in localStorage as an array of watchlist objects
+ * - Each watchlist contains an array of movie items
+ * - UI updates reactively by re-rendering from localStorage state
+ * - Event delegation used for dynamically generated movie cards
  *
- * shape:
- *  {
- *   id: "",
- *   title: "",
- *   icon: "",
+ * DATA STRUCTURE:
+ * watchlists = [{
+ *   id: "uuid",
+ *   title: "string",
+ *   icon: "emoji",
  *   items: [{
- *     id: "",
- *     title: "",
- *     posterUrl: "",
- *     watched: false,
- *     order: 0,
- *     review: ""
- *   }],
- *  }
+ *     id: "uuid",
+ *     title: "string",
+ *     posterUrl: "string",
+ *     watched: boolean,
+ *     order: number,
+ *     review: "string"
+ *   }]
+ * }]
+ *
+ * @version 1.0.0
  */
+
+// CONSTANTS //
+
 const STORAGE_KEY = "watchlistplus";
 
 // DOM ELEMENTS //
@@ -46,37 +55,79 @@ const formReview = document.getElementById("form-review");
 const textareaReview = document.getElementById("textarea-review");
 const reviewDialogTitle = document.getElementById("dialog-review-title");
 
-// STATE //
+// STATE MANAGEMENT //
 
 let currentWatchlistId = null;
 let currentMovieId = null;
+let lastFocusedElement = null; // track focus for accessibility
 
-// STATE HELPERS //
+// UTILITY FUNCTIONS //
 
 function loadWatchlists() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    return data;
   } catch {
+    console.warn("Failed to load watchlists from localStorage");
     return [];
   }
 }
+
 function saveWatchlists(watchlists) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(watchlists));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(watchlists));
+  } catch (error) {
+    // handle quota exceeded or private browsing mode
+    console.error("Failed to save watchlists:", error);
+    alert("Unable to save changes. Your storage may be full.");
+  }
 }
+
 function generateId() {
   return crypto.randomUUID();
 }
 
-// RENDERING //
+/**
+ * Validate poster URL to prevent XSS attacks
+ * Only allow http and https protocols
+ */
+function validatePosterUrl(url) {
+  if (!url || typeof url !== "string") return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Escape HTML to prevent XSS in user-provided content
+ * Used for text content only - URLs are validated separately
+ */
+function escapeHTML(str) {
+  const el = document.createElement("span");
+  el.textContent = str;
+  return el.innerHTML;
+}
+
+/**
+ * Find watchlist by ID - used frequently across event handlers
+ */
+function getWatchlistById(id) {
+  const watchlists = loadWatchlists();
+  return watchlists.find((wl) => wl.id === id);
+}
+
+// RENDERING FUNCTIONS //
 
 function renderApp() {
   const watchlists = loadWatchlists();
   const hasWatchlists = watchlists.length > 0;
 
-  // toggle states-empty & container--empty classes based on whether we have watchlists or not
+  // toggle empty state UI based on whether we have any watchlists
   body.classList.toggle("states-empty", !hasWatchlists);
   mainContent.classList.toggle("container--empty", !hasWatchlists);
-  // hide contentGrid is no watchlists & hide emptyState if we have watchlists
   emptyState.classList.toggle("hide", hasWatchlists);
   contentGrid.classList.toggle("hide", !hasWatchlists);
 
@@ -84,11 +135,12 @@ function renderApp() {
     renderWatchlistCards(watchlists);
   }
 }
+
 function renderWatchlistCards(watchlists) {
   contentGrid.innerHTML = watchlists
     .map(
       (wl) => `
-    <article class="watchlist-card" data-id="${wl.id}">
+    <article class="watchlist-card card-base" data-id="${wl.id}">
       <header class="watchlist-card__header">
         <span class="watchlist-card__icon" aria-hidden="true">${wl.icon}</span>
         <h2 class="watchlist-card__title">${escapeHTML(wl.title)}</h2>
@@ -98,30 +150,53 @@ function renderWatchlistCards(watchlists) {
     )
     .join("");
 }
+/**
+ * Render movies for a specific watchlist
+ * Handles empty state and delegates to buildMovieCardHTML for each item
+ */
 function renderMovies(watchlistId) {
-  const watchlists = loadWatchlists();
-  const watchlist = watchlists.find((wl) => wl.id === watchlistId);
+  const watchlist = getWatchlistById(watchlistId);
   if (!watchlist) return;
 
   const detailContent = document.getElementById("detail-content");
+
   if (watchlist.items.length === 0) {
     detailContent.innerHTML =
       '<p class="empty-state__text">No movies added yet.</p>';
     return;
   }
 
-  detailContent.innerHTML = watchlist.items
-    .sort((a, b) => a.order - b.order)
-    .map(
-      (movie) => `
-    <article class="movie-card">
+  // sort by order property (with fallback for data integrity)
+  const sortedMovies = watchlist.items.sort(
+    (a, b) => (a.order ?? 0) - (b.order ?? 0),
+  );
+
+  detailContent.innerHTML = sortedMovies.map(buildMovieCardHTML).join("");
+}
+
+/**
+ * Build HTML for a single movie card
+ * Extracted for readability and maintainability
+ */
+function buildMovieCardHTML(movie) {
+  const badgeClass = movie.watched ? "watched" : "unwatched";
+  const badgeText = movie.watched ? "Watched" : "Unwatched";
+  const watchedBtnDisabled = movie.watched ? "disabled" : "";
+  const reviewAction = movie.review ? "edit-review" : "add-review";
+  const reviewLabel = movie.review ? "Edit review" : "Add review";
+  const reviewIcon = movie.review ? "create-outline" : "chatbox-outline";
+
+  return `
+    <article class="movie-card card-base">
       <div class="movie-card__header">
-        <img src="${escapeHTML(movie.posterUrl)}" alt="${escapeHTML(movie.title)} poster" />
+        <img 
+          src="${escapeHTML(movie.posterUrl)}" 
+          alt="${escapeHTML(movie.title)} poster" />
         <div class="movie-card__details">
           <div class="movie-card__details-top">
             <h3 class="movie-card__title">${escapeHTML(movie.title)}</h3>
-            <span class="badge badge--${movie.watched ? "watched" : "unwatched"}">
-              ${movie.watched ? "Watched" : "Unwatched"}
+            <span class="badge badge--${badgeClass}">
+              ${badgeText}
             </span>
           </div>
           <div class="movie-card__actions">
@@ -129,16 +204,16 @@ function renderMovies(watchlistId) {
               class="btn btn--icon btn--text btn--small"
               data-action="toggle-watched"
               data-movie-id="${movie.id}"
-              aria-label="Mark as watched"
-              ${movie.watched ? "disabled" : ""}>
+              aria-label="Mark ${escapeHTML(movie.title)} as watched"
+              ${watchedBtnDisabled}>
               <ion-icon name="checkmark-circle-outline"></ion-icon>
             </button>
             <button
               class="btn btn--icon btn--text btn--small"
-              data-action="${movie.review ? "edit-review" : "add-review"}"
+              data-action="${reviewAction}"
               data-movie-id="${movie.id}"
-              aria-label="${movie.review ? "Edit review" : "Add review"}">
-              <ion-icon name="${movie.review ? "create-outline" : "chatbox-outline"}"></ion-icon>
+              aria-label="${reviewLabel} for ${escapeHTML(movie.title)}">
+              <ion-icon name="${reviewIcon}"></ion-icon>
             </button>
           </div>
         </div>
@@ -155,105 +230,144 @@ function renderMovies(watchlistId) {
           : ""
       }
     </article>
-  `,
-    )
-    .join("");
-}
-// prevent XSS for user provided content
-function escapeHTML(str) {
-  const el = document.createElement("span");
-  el.textContent = str;
-  return el.innerHTML;
+  `;
 }
 
 // DIALOG MANAGEMENT //
 
+/**
+ * Generic modal opening function
+ * Stores last focused element for accessibility
+ */
+function openModal(overlayEl, dialogEl, focusEl) {
+  lastFocusedElement = document.activeElement;
+  overlayEl.classList.remove("hide");
+  dialogEl.setAttribute("open", "");
+  if (focusEl) focusEl.focus();
+}
+
+/**
+ * Generic modal closing function
+ * Restores focus to trigger element for accessibility
+ */
+function closeModal(overlayEl, dialogEl, formEl) {
+  overlayEl.classList.add("hide");
+  dialogEl.removeAttribute("open");
+  if (formEl) formEl.reset();
+  if (lastFocusedElement) {
+    lastFocusedElement.focus();
+    lastFocusedElement = null;
+  }
+}
+
+/**
+ * Create reusable overlay click handler
+ * Closes dialog when clicking outside or on close button
+ */
+function createOverlayClickHandler(overlayEl, closeFunction) {
+  return (e) => {
+    if (e.target === overlayEl || e.target.dataset.action === "close-dialog") {
+      closeFunction();
+    }
+  };
+}
+
+/**
+ * Create reusable Escape key handler for dialog accessibility
+ */
+function createEscapeKeyHandler(closeFunction) {
+  return (e) => {
+    if (e.key === "Escape") {
+      closeFunction();
+    }
+  };
+}
+
+// specific dialog functions (thin wrappers for clarity)
+
 function openDialog() {
-  dialogOverlay.classList.remove("hide");
-  dialogCreate.setAttribute("open", "");
-  inputTitle.focus();
+  openModal(dialogOverlay, dialogCreate, inputTitle);
 }
+
 function closeDialog() {
-  dialogOverlay.classList.add("hide");
-  dialogCreate.removeAttribute("open");
-  formCreate.reset();
+  closeModal(dialogOverlay, dialogCreate, formCreate);
 }
+
 function openDetailDialog(watchlistId) {
-  const watchlists = loadWatchlists();
-  const watchlist = watchlists.find((wl) => wl.id === watchlistId);
+  const watchlist = getWatchlistById(watchlistId);
   if (!watchlist) return;
 
   currentWatchlistId = watchlistId;
   detailWatchlistTitle.textContent = watchlist.title;
   renderMovies(watchlistId);
-  dialogDetailOverlay.classList.remove("hide");
-  dialogDetail.setAttribute("open", "");
+  openModal(dialogDetailOverlay, dialogDetail, null);
 }
+
 function closeDetailDialog() {
-  dialogDetailOverlay.classList.add("hide");
-  dialogDetail.removeAttribute("open");
+  closeModal(dialogDetailOverlay, dialogDetail, null);
   currentWatchlistId = null;
 }
+
 function openCreateMovieDialog() {
-  dialogCreateMovieOverlay.classList.remove("hide");
-  dialogCreateMovie.setAttribute("open", "");
-  inputMoviePosterUrl.focus();
+  openModal(dialogCreateMovieOverlay, dialogCreateMovie, inputMoviePosterUrl);
 }
+
 function closeCreateMovieDialog() {
-  dialogCreateMovieOverlay.classList.add("hide");
-  dialogCreateMovie.removeAttribute("open");
-  formCreateMovie.reset();
+  closeModal(dialogCreateMovieOverlay, dialogCreateMovie, formCreateMovie);
 }
+
 function openReviewDialog(movieId, existingReview = "") {
   currentMovieId = movieId;
   textareaReview.value = existingReview;
   reviewDialogTitle.textContent = existingReview ? "Edit review" : "Add review";
-  dialogReviewOverlay.classList.remove("hide");
-  dialogReview.setAttribute("open", "");
-  textareaReview.focus();
+  openModal(dialogReviewOverlay, dialogReview, textareaReview);
 }
+
 function closeReviewDialog() {
-  dialogReviewOverlay.classList.add("hide");
-  dialogReview.removeAttribute("open");
-  formReview.reset();
+  closeModal(dialogReviewOverlay, dialogReview, formReview);
   currentMovieId = null;
 }
 
 // EVENT LISTENERS //
 
+// fab button
 fab.addEventListener("click", openDialog);
-dialogOverlay.addEventListener("click", (e) => {
-  if (
-    e.target === dialogOverlay ||
-    e.target.dataset.action === "close-dialog"
-  ) {
+
+// dialog overlay click handlers (consolidated with helper function)
+dialogOverlay.addEventListener(
+  "click",
+  createOverlayClickHandler(dialogOverlay, closeDialog),
+);
+dialogDetailOverlay.addEventListener(
+  "click",
+  createOverlayClickHandler(dialogDetailOverlay, closeDetailDialog),
+);
+dialogCreateMovieOverlay.addEventListener(
+  "click",
+  createOverlayClickHandler(dialogCreateMovieOverlay, closeCreateMovieDialog),
+);
+dialogReviewOverlay.addEventListener(
+  "click",
+  createOverlayClickHandler(dialogReviewOverlay, closeReviewDialog),
+);
+
+// escape key handlers for accessibility
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+
+  // close dialogs in reverse stacking order (nested first)
+  if (!dialogReviewOverlay.classList.contains("hide")) {
+    closeReviewDialog();
+  } else if (!dialogCreateMovieOverlay.classList.contains("hide")) {
+    closeCreateMovieDialog();
+  } else if (!dialogDetailOverlay.classList.contains("hide")) {
+    closeDetailDialog();
+  } else if (!dialogOverlay.classList.contains("hide")) {
     closeDialog();
   }
 });
-dialogDetailOverlay.addEventListener("click", (e) => {
-  if (
-    e.target === dialogDetailOverlay ||
-    e.target.dataset.action === "close-dialog"
-  ) {
-    closeDetailDialog();
-  }
-});
-dialogCreateMovieOverlay.addEventListener("click", (e) => {
-  if (
-    e.target === dialogCreateMovieOverlay ||
-    e.target.dataset.action === "close-dialog"
-  ) {
-    closeCreateMovieDialog();
-  }
-});
-dialogReviewOverlay.addEventListener("click", (e) => {
-  if (
-    e.target === dialogReviewOverlay ||
-    e.target.dataset.action === "close-dialog"
-  ) {
-    closeReviewDialog();
-  }
-});
+
+// watchlist card clicks (event delegation for dynamically generated content)
 contentGrid.addEventListener("click", (e) => {
   const card = e.target.closest(".watchlist-card");
   if (card) {
@@ -261,9 +375,13 @@ contentGrid.addEventListener("click", (e) => {
     openDetailDialog(watchlistId);
   }
 });
+
+// add movie button
 btnAddMovie.addEventListener("click", () => {
   openCreateMovieDialog();
 });
+
+// movie card action buttons (event delegation for dynamically generated content)
 const detailContent = document.getElementById("detail-content");
 detailContent.addEventListener("click", (e) => {
   const action = e.target.dataset.action;
@@ -285,6 +403,9 @@ detailContent.addEventListener("click", (e) => {
     openReviewDialog(movieId, movie.review || "");
   }
 });
+
+// form submit handlers
+
 formReview.addEventListener("submit", (e) => {
   e.preventDefault();
   const review = textareaReview.value.trim();
@@ -301,11 +422,19 @@ formReview.addEventListener("submit", (e) => {
   closeReviewDialog();
   renderMovies(currentWatchlistId);
 });
+
 formCreateMovie.addEventListener("submit", (e) => {
   e.preventDefault();
   const posterUrl = inputMoviePosterUrl.value.trim();
   const title = inputMovieTitle.value.trim();
+
   if (!posterUrl || !title) return;
+
+  // validate URL to prevent XSS via javascript: protocol
+  if (!validatePosterUrl(posterUrl)) {
+    alert("Please enter a valid http or https URL for the poster.");
+    return;
+  }
 
   const watchlists = loadWatchlists();
   const watchlist = watchlists.find((wl) => wl.id === currentWatchlistId);
@@ -316,7 +445,7 @@ formCreateMovie.addEventListener("submit", (e) => {
     title,
     posterUrl,
     watched: false,
-    order: watchlist.items.length,
+    order: watchlist.items.length, // maintain insertion order
     review: "",
   };
 
@@ -331,7 +460,6 @@ formCreate.addEventListener("submit", (e) => {
   if (!title) return;
 
   const watchlists = loadWatchlists();
-  // only 1 watchlist emoji for now
   const icons = ["🍿"];
   const icon = icons[watchlists.length % icons.length];
 
@@ -347,6 +475,6 @@ formCreate.addEventListener("submit", (e) => {
   renderApp();
 });
 
-// INIT APP //
+// APP INITIALIZATION //
 
 renderApp();
