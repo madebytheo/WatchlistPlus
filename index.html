@@ -78,6 +78,55 @@
       </dialog>
     </div>
 
+    <!-- add movie dialog -->
+    <div
+      class="dialog-overlay hide"
+      id="dialog-create-movie-overlay"
+      role="presentation">
+      <dialog
+        class="dialog"
+        id="dialog-create-movie"
+        aria-labelledby="dialog-create-movie-title">
+        <header class="dialog__header">
+          <h2 id="dialog-create-movie-title">Add a movie</h2>
+          <button
+            class="btn btn--icon btn--text"
+            data-action="close-dialog"
+            aria-label="Close dialog">
+            <ion-icon name="close-outline"></ion-icon>
+          </button>
+        </header>
+        <form class="dialog__form" id="form-create-movie">
+          <label class="form__label" for="input-movie-poster-url"
+            >Poster URL</label
+          >
+          <input
+            type="text"
+            name="movie-poster-url"
+            id="input-movie-poster-url"
+            class="form__input"
+            placeholder="e.g. https://egoamo.co.za/cdn/shop/products/InfinityWars.jpg?v=1637907877"
+            autocomplete="off"
+            required />
+          <label class="form__label" for="input-movie-title">Title</label>
+          <input
+            type="text"
+            name="movie-title"
+            id="input-movie-title"
+            class="form__input"
+            placeholder="e.g. Iron Man"
+            autocomplete="off"
+            required />
+          <button
+            type="submit"
+            class="btn btn--primary btn--form"
+            id="btn-create-movie-submit">
+            Add
+          </button>
+        </form>
+      </dialog>
+    </div>
+
     <!-- detail watchlist dialog -->
     <div
       class="dialog-overlay hide"
@@ -97,16 +146,53 @@
           </button>
         </header>
         <div class="dialog__content" id="detail-content">
-          <!-- Future: items list will go here -->
+          <!-- added movies render here -->
         </div>
         <footer class="dialog__footer">
           <button
             type="button"
             class="btn btn--primary btn--form"
             id="btn-add-movie">
-            Add Movie
+            Add movie
           </button>
         </footer>
+      </dialog>
+    </div>
+
+    <!-- review dialog -->
+    <div
+      class="dialog-overlay hide"
+      id="dialog-review-overlay"
+      role="presentation">
+      <dialog
+        class="dialog"
+        id="dialog-review"
+        aria-labelledby="dialog-review-title">
+        <header class="dialog__header">
+          <h2 id="dialog-review-title">Add review</h2>
+          <button
+            class="btn btn--icon btn--text"
+            data-action="close-dialog"
+            aria-label="Close dialog">
+            <ion-icon name="close-outline"></ion-icon>
+          </button>
+        </header>
+        <form class="dialog__form" id="form-review">
+          <label class="form__label" for="textarea-review">Your thoughts</label>
+          <textarea
+            name="review"
+            id="textarea-review"
+            class="form__input form__textarea"
+            placeholder="What did you think of this movie?"
+            rows="6"
+            autocomplete="off"></textarea>
+          <button
+            type="submit"
+            class="btn btn--primary btn--form"
+            id="btn-review-submit">
+            Save
+          </button>
+        </form>
       </dialog>
     </div>
 

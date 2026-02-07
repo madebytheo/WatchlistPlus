@@ -143,6 +143,11 @@ h6 {
   transition: all 0.1s ease-in-out;
   cursor: pointer;
 }
+.btn--small {
+  min-width: 36px;
+  min-height: 36px;
+  font-size: 1.25rem;
+}
 .btn--primary {
   background: var(--accent-100);
   color: var(--bg-100);
@@ -181,6 +186,14 @@ h6 {
   background: var(--bg-300);
   outline: none;
 }
+.btn--text:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.btn--text:disabled:hover,
+.btn--text:disabled:focus-visible {
+  background: transparent;
+}
 #fab-create {
   position: fixed;
   bottom: var(--space-3);
@@ -203,6 +216,7 @@ h6 {
 }
 .empty-state__text {
   font-size: 0.875rem;
+  color: var(--text-200);
 }
 
 /* watchlist card */
@@ -237,6 +251,94 @@ h6 {
   font-size: 0.875rem;
 }
 
+/* movie card */
+.movie-card {
+  background: rgba(41, 41, 41, 0.25);
+  width: 100%;
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  border: 1px solid var(--bg-200);
+  break-inside: avoid;
+  margin-bottom: var(--space-3);
+}
+
+.movie-card__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.movie-card__header {
+  display: flex;
+  align-items: start;
+  gap: var(--space-3);
+}
+.movie-card__header > img {
+  width: 100px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+}
+.movie-card__details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 150px;
+}
+.movie-card__details-top {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: var(--space-2);
+}
+.movie-card__title {
+  font-size: 1rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.movie-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  margin-top: auto;
+}
+.movie-card__review {
+  padding: var(--space-2);
+  border-left: 2px solid var(--accent-100);
+}
+.movie-card__review-text {
+  font-style: italic;
+  color: var(--text-200);
+}
+.movie-card__review > button {
+  align-self: flex-end;
+}
+
+/* badge */
+.badge {
+  font-size: 0.75rem;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.badge--watched {
+  background: rgba(102, 255, 102, 0.15);
+  color: #66ff66;
+  border: 1px solid rgba(102, 255, 102, 0.3);
+}
+.badge--unwatched {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-200);
+  border: 1px solid var(--bg-300);
+}
+
 /* dialog */
 .dialog-overlay {
   position: fixed;
@@ -252,15 +354,17 @@ h6 {
 }
 .dialog {
   background: var(--bg-200);
-  border: none;
+  border: 1px solid var(--bg-300);
   width: 90%;
   border-radius: var(--radius-md);
   max-width: 450px;
 }
 .dialog--fullscreen {
+  background: var(--bg-100);
   width: 100%;
   max-width: 100%;
   height: 100dvh;
+  border: none;
   border-radius: 0;
   padding: var(--space-3);
   display: flex;
@@ -301,6 +405,7 @@ h6 {
   color: var(--text-100);
   transition: all 0.1s ease-in-out;
   outline-color: var(--bg-300);
+  margin-bottom: var(--space-3);
 }
 .form__input:last-of-type {
   margin-bottom: var(--space-5);
@@ -308,6 +413,14 @@ h6 {
 .form__input:focus-visible {
   outline: 1px solid var(--bg-300);
   outline-offset: 3px;
+}
+.form__textarea {
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+}
+#dialog-create-movie-overlay {
+  z-index: 200; /* fix stacking order of dialogs being opened inside other dialogs */
 }
 
 /* masonry content grid */
