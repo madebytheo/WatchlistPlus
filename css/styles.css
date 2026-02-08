@@ -252,6 +252,11 @@ img {
   align-items: start;
   gap: var(--space-3);
 }
+.watchlist-card__controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 .watchlist-card__icon {
   filter: drop-shadow(var(--box-shadow-sm) var(--primary-200));
 }

@@ -20,7 +20,12 @@
  *   }]
  * }]
  *
- * @version 1.0.0
+ * VERSIONING:
+ * - MAJOR: Increments when I feel enough has changed
+ * - MINOR: Increments when new features are added
+ * - PATCH: Increments when bugs are fixed or small improvements are made
+ *
+ * @version 1.1.0
  */
 
 // CONSTANTS //
@@ -54,6 +59,11 @@ const dialogReview = document.getElementById("dialog-review");
 const formReview = document.getElementById("form-review");
 const textareaReview = document.getElementById("textarea-review");
 const reviewDialogTitle = document.getElementById("dialog-review-title");
+const dialogImportOverlay = document.getElementById("dialog-import-overlay");
+const dialogImport = document.getElementById("dialog-import");
+const formImport = document.getElementById("form-import");
+const textareaImport = document.getElementById("textarea-import");
+const btnImport = document.querySelector(".site-header .btn--icon");
 
 // STATE MANAGEMENT //
 
@@ -119,6 +129,132 @@ function getWatchlistById(id) {
   return watchlists.find((wl) => wl.id === id);
 }
 
+// SHARING FUNCTIONALITY //
+
+/**
+ * Handle sharing a watchlist
+ * Creates shareable JSON and copies to clipboard
+ */
+function handleShareWatchlist(watchlistId) {
+  const watchlist = getWatchlistById(watchlistId);
+  if (!watchlist) return;
+
+  const shareableData = createShareableWatchlist(watchlist);
+  const jsonString = JSON.stringify(shareableData, null, 2);
+
+  // copy to clipboard
+  navigator.clipboard
+    .writeText(jsonString)
+    .then(() => {
+      // provide user feedback
+      alert(
+        `"${watchlist.title}" copied to clipboard!\n\nShare this with others to import the watchlist.`,
+      );
+    })
+    .catch((err) => {
+      console.error("Failed to copy to clipboard:", err);
+      // fallback: show the JSON in a dialog or prompt
+      alert(
+        "Unable to copy automatically. Here's your shareable watchlist:\n\n" +
+          jsonString,
+      );
+    });
+}
+
+/**
+ * Create a shareable copy of a watchlist
+ * Resets all movies to unwatched state and removes reviews
+ */
+function createShareableWatchlist(watchlist) {
+  if (!watchlist) return null;
+
+  return {
+    id: generateId(), // generate new ID for imported copy
+    title: watchlist.title,
+    icon: watchlist.icon,
+    items: watchlist.items.map((movie, index) => ({
+      id: generateId(), // generate new ID for each movie
+      title: movie.title,
+      posterUrl: movie.posterUrl,
+      watched: false, // reset to unwatched
+      order: index, // maintain order
+      review: "", // remove review
+    })),
+  };
+}
+
+/**
+ * Validate imported watchlist data
+ * Ensures data structure matches expected format
+ */
+function validateImportedWatchlist(data) {
+  if (!data || typeof data !== "object") return false;
+  if (typeof data.title !== "string" || !data.title.trim()) return false;
+  if (typeof data.icon !== "string") return false;
+  if (!Array.isArray(data.items)) return false;
+
+  // validate each movie item
+  return data.items.every((item) => {
+    return (
+      item &&
+      typeof item.title === "string" &&
+      item.title.trim() &&
+      typeof item.posterUrl === "string" &&
+      validatePosterUrl(item.posterUrl) &&
+      typeof item.watched === "boolean" &&
+      typeof item.order === "number"
+    );
+  });
+}
+
+/**
+ * Import a watchlist from JSON data
+ * Reuses createShareableWatchlist to ensure new IDs
+ */
+function importWatchlist(jsonString) {
+  try {
+    const data = JSON.parse(jsonString);
+
+    if (!validateImportedWatchlist(data)) {
+      alert(
+        "Invalid watchlist data. Please make sure you copied the entire text.",
+      );
+      return false;
+    }
+
+    const watchlists = loadWatchlists();
+
+    // check for duplicate titles (optional - help prevent confusion)
+    const duplicateTitle = watchlists.find(
+      (wl) => wl.title.toLowerCase() === data.title.toLowerCase(),
+    );
+
+    let importData = data;
+
+    if (duplicateTitle) {
+      // add "(Shared with me)" suffix to distinguish
+      importData = {
+        ...data,
+        title: `${data.title} (Shared with me)`,
+      };
+    }
+
+    // ensure fresh IDs using the existing utility
+    const newWatchlist = createShareableWatchlist(importData);
+
+    watchlists.push(newWatchlist);
+    saveWatchlists(watchlists);
+
+    return true;
+  } catch (error) {
+    console.error("Import failed:", error);
+    alert(
+      "Could not import watchlist. Please make sure you pasted the correct text.",
+    );
+    return false;
+  }
+}
+
 // RENDERING FUNCTIONS //
 
 function renderApp() {
@@ -145,7 +281,16 @@ function renderWatchlistCards(watchlists) {
         <span class="watchlist-card__icon" aria-hidden="true">${wl.icon}</span>
         <h2 class="watchlist-card__title">${escapeHTML(wl.title)}</h2>
       </header>
-      <p class="watchlist-card__count">${wl.items.length} items</p>
+      <div class="watchlist-card__controls">
+        <p class="watchlist-card__count">${wl.items.length} items</p>
+        <button 
+          class="btn btn--icon btn--text btn--small"
+          data-action="share-watchlist"
+          data-watchlist-id="${wl.id}"
+          aria-label="Share ${escapeHTML(wl.title)}">
+          <ion-icon name="share-social-outline"></ion-icon>
+        </button>
+      </div>
     </article>`,
     )
     .join("");
@@ -328,6 +473,14 @@ function closeReviewDialog() {
   currentMovieId = null;
 }
 
+function openImportDialog() {
+  openModal(dialogImportOverlay, dialogImport, textareaImport);
+}
+
+function closeImportDialog() {
+  closeModal(dialogImportOverlay, dialogImport, formImport);
+}
+
 // EVENT LISTENERS //
 
 // fab button
@@ -350,6 +503,10 @@ dialogReviewOverlay.addEventListener(
   "click",
   createOverlayClickHandler(dialogReviewOverlay, closeReviewDialog),
 );
+dialogImportOverlay.addEventListener(
+  "click",
+  createOverlayClickHandler(dialogImportOverlay, closeImportDialog),
+);
 
 // escape key handlers for accessibility
 document.addEventListener("keydown", (e) => {
@@ -360,6 +517,8 @@ document.addEventListener("keydown", (e) => {
     closeReviewDialog();
   } else if (!dialogCreateMovieOverlay.classList.contains("hide")) {
     closeCreateMovieDialog();
+  } else if (!dialogImportOverlay.classList.contains("hide")) {
+    closeImportDialog();
   } else if (!dialogDetailOverlay.classList.contains("hide")) {
     closeDetailDialog();
   } else if (!dialogOverlay.classList.contains("hide")) {
@@ -369,10 +528,21 @@ document.addEventListener("keydown", (e) => {
 
 // watchlist card clicks (event delegation for dynamically generated content)
 contentGrid.addEventListener("click", (e) => {
+  const action = e.target.dataset.action;
+  const watchlistId = e.target.dataset.watchlistId;
+
+  // handle share button
+  if (action === "share-watchlist" && watchlistId) {
+    e.stopPropagation(); // prevent card click from opening detail view
+    handleShareWatchlist(watchlistId);
+    return;
+  }
+
+  // handle card click to open detail view
   const card = e.target.closest(".watchlist-card");
   if (card) {
-    const watchlistId = card.dataset.id;
-    openDetailDialog(watchlistId);
+    const id = card.dataset.id;
+    openDetailDialog(id);
   }
 });
 
@@ -380,6 +550,9 @@ contentGrid.addEventListener("click", (e) => {
 btnAddMovie.addEventListener("click", () => {
   openCreateMovieDialog();
 });
+
+// import button in header
+btnImport.addEventListener("click", openImportDialog);
 
 // movie card action buttons (event delegation for dynamically generated content)
 const detailContent = document.getElementById("detail-content");
@@ -473,6 +646,21 @@ formCreate.addEventListener("submit", (e) => {
   saveWatchlists(watchlists);
   closeDialog();
   renderApp();
+});
+
+formImport.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const importData = textareaImport.value.trim();
+
+  if (!importData) return;
+
+  const success = importWatchlist(importData);
+
+  if (success) {
+    closeImportDialog();
+    renderApp();
+    alert("Watchlist imported successfully!");
+  }
 });
 
 // APP INITIALIZATION //
