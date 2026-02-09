@@ -451,6 +451,7 @@ function openDetailDialog(watchlistId) {
 function closeDetailDialog() {
   closeModal(dialogDetailOverlay, dialogDetail, null);
   currentWatchlistId = null;
+  renderWatchlistCards(loadWatchlists()); // re-render to update counts on watchlist cards. performance impact is negligible
 }
 
 function openCreateMovieDialog() {
