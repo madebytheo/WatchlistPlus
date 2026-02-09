@@ -382,9 +382,7 @@ img {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-5);
-  border-bottom: 1px solid var(--bg-300);
-  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 .dialog__content {
   flex: 1;
@@ -398,8 +396,6 @@ img {
 .dialog__footer {
   display: flex;
   justify-content: flex-end;
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--bg-300);
 }
 .form__label {
   margin: 0 0 var(--space-2) var(--space-2);
