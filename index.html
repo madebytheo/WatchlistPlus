@@ -118,6 +118,15 @@
           </button>
         </header>
         <form class="dialog__form" id="form-create-movie">
+          <label class="form__label" for="input-movie-title">Title</label>
+          <input
+            type="text"
+            name="movie-title"
+            id="input-movie-title"
+            class="form__input"
+            placeholder="e.g. Iron Man"
+            autocomplete="off"
+            required />
           <label class="form__label" for="input-movie-poster-url"
             >Poster URL</label
           >
@@ -127,15 +136,6 @@
             id="input-movie-poster-url"
             class="form__input"
             placeholder="e.g. https://egoamo.co.za/cdn/shop/products/InfinityWars.jpg?v=1637907877"
-            autocomplete="off"
-            required />
-          <label class="form__label" for="input-movie-title">Title</label>
-          <input
-            type="text"
-            name="movie-title"
-            id="input-movie-title"
-            class="form__input"
-            placeholder="e.g. Iron Man"
             autocomplete="off"
             required />
           <button
