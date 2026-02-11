@@ -4,6 +4,7 @@
  * - Each watchlist contains an array of movie items
  * - UI updates reactively by re-rendering from localStorage state
  * - Event delegation used for dynamically generated movie cards
+ * - User settings stored separately in localStorage
  *
  * DATA STRUCTURE:
  * watchlists = [{
@@ -20,17 +21,22 @@
  *   }]
  * }]
  *
+ * settings = {
+ *   confirmationsEnabled: boolean
+ * }
+ *
  * VERSIONING:
  * - MAJOR: Increments when I feel enough has changed
  * - MINOR: Increments when new features are added
  * - PATCH: Increments when bugs are fixed or small improvements are made
  *
- * @version 1.1.7
+ * @version 1.2.7
  */
 
 // CONSTANTS //
 
 const STORAGE_KEY = "watchlistplus";
+const SETTINGS_KEY = "watchlistplus__settings";
 
 // DOM ELEMENTS //
 
@@ -63,13 +69,57 @@ const dialogImportOverlay = document.getElementById("dialog-import-overlay");
 const dialogImport = document.getElementById("dialog-import");
 const formImport = document.getElementById("form-import");
 const textareaImport = document.getElementById("textarea-import");
-const btnImport = document.querySelector(".site-header .btn--icon");
+const btnSettings = document.getElementById("btn-settings");
+const dialogSettingsOverlay = document.getElementById(
+  "dialog-settings-overlay",
+);
+const dialogSettings = document.getElementById("dialog-settings");
+const toggleConfirmations = document.getElementById("toggle-confirmations");
+const btnOpenImport = document.getElementById("btn-open-import");
+const dialogConfirmOverlay = document.getElementById("dialog-confirm-overlay");
+const dialogConfirm = document.getElementById("dialog-confirm");
+const dialogConfirmTitle = document.getElementById("dialog-confirm-title");
+const dialogConfirmMessage = document.getElementById("dialog-confirm-message");
+const btnConfirmAction = document.getElementById("btn-confirm-action");
 
 // STATE MANAGEMENT //
 
 let currentWatchlistId = null;
 let currentMovieId = null;
 let lastFocusedElement = null; // track focus for accessibility
+let pendingConfirmAction = null; // stores the action to execute after confirmation
+
+// SETTINGS MANAGEMENT //
+
+function getDefaultSettings() {
+  return {
+    confirmationsEnabled: true,
+  };
+}
+
+function loadSettings() {
+  try {
+    const data = localStorage.getItem(SETTINGS_KEY);
+    if (!data) return getDefaultSettings();
+    return { ...getDefaultSettings(), ...JSON.parse(data) };
+  } catch {
+    console.warn("Failed to load settings from localStorage");
+    return getDefaultSettings();
+  }
+}
+
+function saveSettings(settings) {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error("Failed to save settings:", error);
+  }
+}
+
+function initializeSettings() {
+  const settings = loadSettings();
+  toggleConfirmations.checked = settings.confirmationsEnabled;
+}
 
 // UTILITY FUNCTIONS //
 
@@ -127,6 +177,38 @@ function escapeHTML(str) {
 function getWatchlistById(id) {
   const watchlists = loadWatchlists();
   return watchlists.find((wl) => wl.id === id);
+}
+
+// CONFIRMATION DIALOG //
+
+/**
+ * Show confirmation dialog if setting is enabled
+ * Returns a Promise that resolves with true/false based on user choice
+ */
+function showConfirmation(title, message) {
+  const settings = loadSettings();
+
+  // if confirmations disabled, auto-confirm
+  if (!settings.confirmationsEnabled) {
+    return Promise.resolve(true);
+  }
+
+  return new Promise((resolve) => {
+    dialogConfirmTitle.textContent = title;
+    dialogConfirmMessage.textContent = message;
+
+    pendingConfirmAction = resolve;
+
+    openModal(dialogConfirmOverlay, dialogConfirm, btnConfirmAction);
+  });
+}
+
+function handleConfirmAction(confirmed) {
+  if (pendingConfirmAction) {
+    pendingConfirmAction(confirmed);
+    pendingConfirmAction = null;
+  }
+  closeConfirmDialog();
 }
 
 // SHARING FUNCTIONALITY //
@@ -211,7 +293,7 @@ function validateImportedWatchlist(data) {
  * Import a watchlist from JSON data
  * Reuses createShareableWatchlist to ensure new IDs
  */
-function importWatchlist(jsonString) {
+async function importWatchlist(jsonString) {
   try {
     const data = JSON.parse(jsonString);
 
@@ -221,6 +303,14 @@ function importWatchlist(jsonString) {
       );
       return false;
     }
+
+    // show confirmation dialog
+    const confirmed = await showConfirmation(
+      "Import watchlist",
+      `Import "${data.title}" with ${data.items.length} movie(s)?`,
+    );
+
+    if (!confirmed) return false;
 
     const watchlists = loadWatchlists();
 
@@ -492,10 +582,54 @@ function closeImportDialog() {
   closeModal(dialogImportOverlay, dialogImport, formImport);
 }
 
+function openSettingsDialog() {
+  // refresh toggle state in case it was changed elsewhere
+  const settings = loadSettings();
+  toggleConfirmations.checked = settings.confirmationsEnabled;
+  openModal(dialogSettingsOverlay, dialogSettings, null);
+}
+
+function closeSettingsDialog() {
+  closeModal(dialogSettingsOverlay, dialogSettings, null);
+}
+
+function closeConfirmDialog() {
+  closeModal(dialogConfirmOverlay, dialogConfirm, null);
+}
+
 // EVENT LISTENERS //
 
 // fab button
 fab.addEventListener("click", openDialog);
+
+// settings button
+btnSettings.addEventListener("click", openSettingsDialog);
+
+// open import from settings
+btnOpenImport.addEventListener("click", () => {
+  openImportDialog();
+});
+
+// toggle confirmations setting
+toggleConfirmations.addEventListener("change", (e) => {
+  const settings = loadSettings();
+  settings.confirmationsEnabled = e.target.checked;
+  saveSettings(settings);
+});
+
+// confirmation dialog buttons
+btnConfirmAction.addEventListener("click", () => {
+  handleConfirmAction(true);
+});
+
+dialogConfirmOverlay.addEventListener("click", (e) => {
+  if (
+    e.target === dialogConfirmOverlay ||
+    e.target.dataset.action === "cancel-confirm"
+  ) {
+    handleConfirmAction(false);
+  }
+});
 
 // dialog overlay click handlers (consolidated with helper function)
 dialogOverlay.addEventListener(
@@ -518,18 +652,26 @@ dialogImportOverlay.addEventListener(
   "click",
   createOverlayClickHandler(dialogImportOverlay, closeImportDialog),
 );
+dialogSettingsOverlay.addEventListener(
+  "click",
+  createOverlayClickHandler(dialogSettingsOverlay, closeSettingsDialog),
+);
 
 // escape key handlers for accessibility
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
 
   // close dialogs in reverse stacking order (nested first)
-  if (!dialogReviewOverlay.classList.contains("hide")) {
+  if (!dialogConfirmOverlay.classList.contains("hide")) {
+    handleConfirmAction(false);
+  } else if (!dialogReviewOverlay.classList.contains("hide")) {
     closeReviewDialog();
   } else if (!dialogCreateMovieOverlay.classList.contains("hide")) {
     closeCreateMovieDialog();
   } else if (!dialogImportOverlay.classList.contains("hide")) {
     closeImportDialog();
+  } else if (!dialogSettingsOverlay.classList.contains("hide")) {
+    closeSettingsDialog();
   } else if (!dialogDetailOverlay.classList.contains("hide")) {
     closeDetailDialog();
   } else if (!dialogOverlay.classList.contains("hide")) {
@@ -562,12 +704,9 @@ btnAddMovie.addEventListener("click", () => {
   openCreateMovieDialog();
 });
 
-// import button in header
-btnImport.addEventListener("click", openImportDialog);
-
 // movie card action buttons (event delegation for dynamically generated content)
 const detailContent = document.getElementById("detail-content");
-detailContent.addEventListener("click", (e) => {
+detailContent.addEventListener("click", async (e) => {
   const action = e.target.dataset.action;
   const movieId = e.target.dataset.movieId;
   if (!action || !movieId) return;
@@ -580,6 +719,14 @@ detailContent.addEventListener("click", (e) => {
   if (!movie) return;
 
   if (action === "toggle-watched") {
+    // show confirmation
+    const confirmed = await showConfirmation(
+      "Mark as watched",
+      `Mark "${movie.title}" as watched?`,
+    );
+
+    if (!confirmed) return;
+
     movie.watched = true;
     saveWatchlists(watchlists);
     renderMovies(currentWatchlistId);
@@ -590,7 +737,7 @@ detailContent.addEventListener("click", (e) => {
 
 // form submit handlers
 
-formReview.addEventListener("submit", (e) => {
+formReview.addEventListener("submit", async (e) => {
   e.preventDefault();
   const review = textareaReview.value.trim();
 
@@ -601,13 +748,25 @@ formReview.addEventListener("submit", (e) => {
   const movie = watchlist.items.find((m) => m.id === currentMovieId);
   if (!movie) return;
 
+  // determine if this is an add or edit
+  const isEdit = !!movie.review;
+  const action = isEdit ? "Edit" : "Add";
+
+  // show confirmation
+  const confirmed = await showConfirmation(
+    `${action} review`,
+    `${action} review for "${movie.title}"?`,
+  );
+
+  if (!confirmed) return;
+
   movie.review = review;
   saveWatchlists(watchlists);
   closeReviewDialog();
   renderMovies(currentWatchlistId);
 });
 
-formCreateMovie.addEventListener("submit", (e) => {
+formCreateMovie.addEventListener("submit", async (e) => {
   e.preventDefault();
   const posterUrl = inputMoviePosterUrl.value.trim();
   const title = inputMovieTitle.value.trim();
@@ -619,6 +778,14 @@ formCreateMovie.addEventListener("submit", (e) => {
     alert("Please enter a valid http or https URL for the poster.");
     return;
   }
+
+  // show confirmation
+  const confirmed = await showConfirmation(
+    "Add movie",
+    `Add "${title}" to this watchlist?`,
+  );
+
+  if (!confirmed) return;
 
   const watchlists = loadWatchlists();
   const watchlist = watchlists.find((wl) => wl.id === currentWatchlistId);
@@ -638,10 +805,19 @@ formCreateMovie.addEventListener("submit", (e) => {
   closeCreateMovieDialog();
   renderMovies(currentWatchlistId);
 });
-formCreate.addEventListener("submit", (e) => {
+
+formCreate.addEventListener("submit", async (e) => {
   e.preventDefault();
   const title = inputTitle.value.trim();
   if (!title) return;
+
+  // show confirmation
+  const confirmed = await showConfirmation(
+    "Create watchlist",
+    `Create new watchlist "${title}"?`,
+  );
+
+  if (!confirmed) return;
 
   const watchlists = loadWatchlists();
   const icons = ["🍿"];
@@ -659,13 +835,13 @@ formCreate.addEventListener("submit", (e) => {
   renderApp();
 });
 
-formImport.addEventListener("submit", (e) => {
+formImport.addEventListener("submit", async (e) => {
   e.preventDefault();
   const importData = textareaImport.value.trim();
 
   if (!importData) return;
 
-  const success = importWatchlist(importData);
+  const success = await importWatchlist(importData);
 
   if (success) {
     closeImportDialog();
@@ -676,4 +852,5 @@ formImport.addEventListener("submit", (e) => {
 
 // APP INITIALIZATION //
 
+initializeSettings();
 renderApp();
