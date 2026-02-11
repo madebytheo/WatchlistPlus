@@ -306,10 +306,20 @@ function renderMovies(watchlistId) {
   const detailContent = document.getElementById("detail-content");
 
   if (watchlist.items.length === 0) {
-    detailContent.innerHTML =
-      '<p class="empty-state__text">No movies added yet.</p>';
+    detailContent.classList.add("dialog__content--empty");
+    detailContent.innerHTML = `
+      <div class="empty-state">
+        <h2 class="empty-state__title">No movies added yet!</h2>
+        <p class="empty-state__text">
+          Get started by adding a movie. Click the <strong>Add movie</strong> button below.
+        </p>
+      </div>
+    `;
     return;
   }
+
+  // remove empty state class if it exists
+  detailContent.classList.remove("dialog__content--empty");
 
   // sort by order property (with fallback for data integrity)
   const sortedMovies = watchlist.items.sort(
