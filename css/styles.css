@@ -377,6 +377,14 @@ img {
   padding: var(--space-3);
   display: flex;
   flex-direction: column;
+  align-items: center;
+}
+/* constrain fullscreen dialog content to body max-width */
+.dialog--fullscreen .dialog__header,
+.dialog--fullscreen .dialog__content,
+.dialog--fullscreen .dialog__footer {
+  width: 100%;
+  max-width: 1024px;
 }
 .dialog__header {
   display: flex;
