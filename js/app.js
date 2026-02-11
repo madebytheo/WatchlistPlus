@@ -25,7 +25,7 @@
  * - MINOR: Increments when new features are added
  * - PATCH: Increments when bugs are fixed or small improvements are made
  *
- * @version 1.1.0
+ * @version 1.1.7
  */
 
 // CONSTANTS //
