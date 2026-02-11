@@ -455,7 +455,7 @@ function closeDetailDialog() {
 }
 
 function openCreateMovieDialog() {
-  openModal(dialogCreateMovieOverlay, dialogCreateMovie, inputMoviePosterUrl);
+  openModal(dialogCreateMovieOverlay, dialogCreateMovie, inputMovieTitle);
 }
 
 function closeCreateMovieDialog() {
