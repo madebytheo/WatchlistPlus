@@ -30,7 +30,7 @@
  * - MINOR: Increments when new features are added
  * - PATCH: Increments when bugs are fixed or small improvements are made
  *
- * @version 1.2.8
+ * @version 1.2.9
  */
 
 // CONSTANTS //
