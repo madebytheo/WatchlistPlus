@@ -1,3 +1,7 @@
+# 🍿 Watchlist+
+
+**Platform independent content tracking for people who actually finish what they start.**
+
 - [🍿 Watchlist+](#-watchlist)
   - [The Story](#the-story)
   - [Why This Exists](#why-this-exists)
@@ -17,14 +21,9 @@
   - [Getting Started](#getting-started)
     - [Finding Poster URLs](#finding-poster-urls)
   - [Current Status](#current-status)
+  - [Future Considerations](#future-considerations)
   - [Tech Stack](#tech-stack)
   - [Browser Support](#browser-support)
-
----
-
-# 🍿 Watchlist+
-
-**Platform independent content tracking for people who actually finish what they start.**
 
 ## The Story
 
@@ -75,6 +74,7 @@ Enter the sharing feature: export your watchlist as JSON, send it to anyone, the
 - **No editing core content**: Movie titles and posters can't be changed after creation. Prevents accidental mutations.
 - **One way watched status**: Can't unmark as watched. If you logged it, it happened.
 - **Reviews are flexible**: Your thoughts can change, edit reviews anytime.
+- **Optional confirmations**: Toggle confirmation dialogs for actions in settings if you prefer faster interactions.
 
 This might seem limiting, but it's liberating. You're not managing a todo list. You're curating a record of what you've experienced.
 
@@ -83,8 +83,9 @@ This might seem limiting, but it's liberating. You're not managing a todo list. 
 - **Empty state guidance** when you're just starting out
 - **Visual poster display** for quick recognition
 - **Accessible keyboard navigation** (Escape to close dialogs, proper focus management)
-- **Touch friendly interface** with proper tap target sizing (I mostly use the app in its PWA form on my cellphone)
+- **Touch friendly interface** with proper tap target sizing (primarily designed for mobile PWA usage)
 - **Dark theme** designed for cozy movie night browsing
+- **Mobile-first design** optimized for cellphone use (works on desktop but cards may stretch wider than ideal)
 
 ## Technical Highlights
 
@@ -116,7 +117,7 @@ Built with intentionality and care for the details:
 
 - **CSS custom properties** for consistent theming
 - **Design tokens** for spacing, colors, and typography
-- **Mobile first responsive design** with a focus on PWA functionality rather than larger screens and computers
+- **Mobile first responsive design** with a focus on PWA functionality
 - **Component based CSS architecture**
 
 ## Getting Started
@@ -125,11 +126,12 @@ Built with intentionality and care for the details:
 2. **Create your first watchlist** by clicking the **+** button
 3. **Add movies** by clicking into a watchlist and hitting "Add movie"
    - Find poster URLs on sites like TMDB, IMDb, or movie databases
-   - Paste the image URL and add the title
+   - Add the title and paste the image URL
 4. **Mark movies as watched** as you complete them
 5. **Leave reviews** to remember your thoughts
 6. **Share your watchlist** using the share button (copies JSON to clipboard)
-7. **Import shared lists** using the import button in the header
+7. **Import shared lists** using the import button in settings
+8. **Customize settings** including toggling confirmation dialogs
 
 ### Finding Poster URLs
 
@@ -137,11 +139,39 @@ Right click any movie poster on the web → "Copy Image Address" → Paste into 
 
 ## Current Status
 
-**Version:** 1.1.0 (actively maintained)
+**Version:** 1.2.9 _(Considered feature-complete)_
 
-Watchlist+ is in active development and being used daily. Features and improvements are being added based on me and my GF's real world usage. The core functionality is solid, but there's always room for polish.
+Watchlist+ has reached a stable state where it accomplishes everything it was designed to do. The app is being used daily in its primary use case: as a PWA on mobile devices for tracking shared watchlists between two people.
 
-This is a living project built out of necessity, refined through use.
+**What works great:**
+
+- Core watchlist functionality is solid
+- Mobile PWA experience is smooth
+- Sharing and importing works flawlessly
+- Data persistence is reliable
+- Review system provides the intended value
+
+**Known limitations:**
+
+- Desktop experience is functional but cards stretch wider than ideal
+- No native mobile app features (push notifications, etc.)
+- Manual poster URL entry (intentional for simplicity)
+
+**This project demonstrates:**
+
+- Sometimes "good enough" is better than an unshipped "perfect" app
+- Focused scope leads to finished projects
+- Building for your actual use case produces better tools
+
+## Future Considerations
+
+If long-term usage proves the concept valuable, potential evolution paths include:
+
+- **Native mobile app**: Converting to Vue + Capacitor or React Native for dedicated iOS/Android apps
+- **Desktop refinement**: Constraining card width for better large-screen experience
+- **Automatic poster fetching**: Integration with TMDB API for easier content addition
+
+However, the current web-based PWA accomplishes the goal and ships value today. Further development will only be considered if real-world usage demands it.
 
 ## Tech Stack
 
@@ -150,7 +180,7 @@ This is a living project built out of necessity, refined through use.
 - **HTML5** (semantic, accessible)
 - **localStorage** for persistence
 - **Ionicons** for iconography
-- **Google Fonts** (Outfit typeface)
+- **Outfit typeface** (locally hosted)
 
 ## Browser Support
 
@@ -160,5 +190,10 @@ Works in all modern browsers supporting:
 - `crypto.randomUUID()`
 - localStorage
 - CSS Grid & Flexbox
+- Clipboard API
 
 Basically, anything from ~2022 onwards.
+
+---
+
+_Built by [@madebytheo](https://github.com/madebytheo) as a practical solution to a real problem. Sometimes the best code is the code that ships._
